@@ -112,22 +112,20 @@ if load_profile is not None:
     # Add Energy Deficit area (Green)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([load_profile, chiller_response[::-1]]),
+        y=np.concatenate([load_profile, np.maximum(chiller_response, 0)[::-1]]),  # Correct overlap
         fill='toself',
-        fillcolor='rgba(34, 139, 34, 0.6)',  # Green for deficit
+        fillcolor='rgba(34, 139, 34, 0.7)',  # Slightly more opaque green
         line=dict(color='rgba(255,255,255,0)'),  # No border
-        hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
     ))
 
     # Add Overperformance area (Orange)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([chiller_response, load_profile[::-1]]),
+        y=np.concatenate([np.minimum(chiller_response, load_profile), load_profile[::-1]]),  # Correct overlap
         fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.6)',  # Orange for overperformance
+        fillcolor='rgba(255, 165, 0, 0.7)',  # Slightly more opaque orange
         line=dict(color='rgba(255,255,255,0)'),  # No border
-        hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))
 
@@ -145,7 +143,7 @@ if load_profile is not None:
         ),
         hovermode="x unified",  # Unified hover tooltip
         template="plotly_white",
-        width=1300,  # Wider chart
+        width=1400,  # Make the chart wider
         height=600   # Maintain height
     )
 

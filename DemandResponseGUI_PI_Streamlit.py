@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
-import plotly.graph_objects as go
-import base64
+import matplotlib.pyplot as plt
 
 # Function to generate a typical heating load profile
 def typical_heating_load(time_scale):
@@ -24,32 +23,15 @@ def pi_controller(load_profile, time, kp, ki):
         error = load_profile[i] - response[i-1]
         integral += error * (time[i] - time[i-1])
         response[i] = kp * error + ki * integral
-        response[i] = max(0, response[i])
+        response[i] = max(0, response[i])  # Prevent negative response
     return response
 
-# SES Logo and Title
-logo_path = "assets/SES_Logo+Tag_CMYK.png"  # Path set to Git repo's assets folder
-
-# Read and encode the logo file as base64
-with open(logo_path, "rb") as img_file:
-    encoded_logo = base64.b64encode(img_file.read()).decode()
-
-# Display the logo in the Streamlit app
-st.markdown(
-    f"""
-    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
-        <img src="data:image/png;base64,{encoded_logo}" style="max-width: 80%; height: auto;" />
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
+# Streamlit title and description
 st.title("Chiller Demand Response Simulation with PI Controller")
 st.markdown(
     """
-    This simulation models how a chiller responds to varying building cooling demands. Adjust the sliders to 
-    fine-tune proportional and integral gains for efficient energy use. Energy deficit (green) represents 
-    underperformance, and overperformance (orange) shows excess cooling.
+    This simulation models how a chiller responds to varying building cooling demands. 
+    Adjust the sliders to fine-tune proportional and integral gains for efficient energy use.
     """
 )
 
@@ -59,7 +41,7 @@ kp = st.slider("Proportional Gain (Kp)", 0.0, 2.0, 1.0, step=0.01)
 ki = st.slider("Integral Gain (Ki)", 0.0, 2.0, 0.5, step=0.01)
 custom_load = st.text_input("Custom Load Profile (comma-separated kW values)")
 
-# Load Profile
+# Generate or load the heating profile
 if custom_load.strip():
     try:
         load_profile = np.array([float(x) for x in custom_load.split(",")])
@@ -70,80 +52,39 @@ if custom_load.strip():
 else:
     time, load_profile = typical_heating_load(time_scale)
 
+# Plotting
 if load_profile is not None:
-    # PI Controller
+    # Simulate chiller response using the PI controller
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
-    # Initialize the figure
-    fig = go.Figure()
+    # Plot the graph
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Add Heat Load line (Load Profile)
-    fig.add_trace(go.Scatter(
-        x=time,
-        y=load_profile,
-        mode='lines',
-        name="Heat Load (kW)",
-        line=dict(color='red')
-    ))
+    # Plot Heat Load and Chiller Response lines
+    ax.plot(time, load_profile, label="Heat Load (kW)", color="red")
+    ax.plot(time, chiller_response, label="Chiller Response (kW)", color="blue")
 
-    # Add Chiller Response line
-    fig.add_trace(go.Scatter(
-        x=time,
-        y=chiller_response,
-        mode='lines',
-        name="Chiller Response (kW)",
-        line=dict(color='blue')
-    ))
+    # Fill areas for deficit and overperformance
+    ax.fill_between(time, load_profile, chiller_response, where=(load_profile > chiller_response),
+                    color="green", alpha=0.3, label="Energy Deficit")
+    ax.fill_between(time, chiller_response, load_profile, where=(chiller_response > load_profile),
+                    color="yellow", alpha=0.3, label="Overperformance (Optimization Opportunity)")
 
-    # Calculate energy deficit and overperformance
-    energy_deficit = np.where(load_profile > chiller_response, load_profile - chiller_response, 0)
-    energy_overperformance = np.where(chiller_response > load_profile, chiller_response - load_profile, 0)
+    # Plot aesthetics
+    ax.set_title("Chiller Demand Response Simulation")
+    ax.set_xlabel("Time (minutes)")
+    ax.set_ylabel("Power (kW)")
+    ax.legend()
+    ax.grid(True)
 
-    # Total energy deficit and overperformance (kWh)
-    energy_deficit_total = np.trapz(energy_deficit, time) / 60  # Convert to kWh
-    energy_overperformance_total = np.trapz(energy_overperformance, time) / 60  # Convert to kWh
+    # Display plot
+    st.pyplot(fig)
 
-    # Add Energy Deficit area (Green)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time[load_profile > chiller_response], time[load_profile > chiller_response][::-1]]),
-        y=np.concatenate([load_profile[load_profile > chiller_response], chiller_response[load_profile > chiller_response][::-1]]),
-        fill='toself',
-        fillcolor='rgba(34, 139, 34, 0.6)',  # Green color
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
-    ))
+    # Optional: Display summary stats (Energy Deficit and Overperformance)
+    energy_deficit_total = np.trapz(
+        np.maximum(load_profile - chiller_response, 0), time) / 60  # Convert to kWh
+    energy_overperformance_total = np.trapz(
+        np.maximum(chiller_response - load_profile, 0), time) / 60  # Convert to kWh
 
-    # Add Overperformance area (Orange)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time[chiller_response > load_profile], time[chiller_response > load_profile][::-1]]),
-        y=np.concatenate([chiller_response[chiller_response > load_profile], load_profile[chiller_response > load_profile][::-1]]),
-        fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.6)',  # Orange color
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
-    ))
-
-    # Update layout
-    fig.update_layout(
-        title="Chiller Demand Response Simulation",
-        xaxis_title="Time (minutes)",
-        yaxis_title="Power (kW)",
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.25,
-            xanchor="center",
-            x=0.5
-        ),
-        hovermode="x unified",
-        template="plotly_white",
-        width=1300,
-        height=600
-    )
-
-    # Display the chart
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Display Results
-    st.write(f"**Energy Deficit (Underperformance):** {energy_deficit_total:.2f} kWh")
-    st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
+    st.write(f"**Total Energy Deficit:** {energy_deficit_total:.2f} kWh")
+    st.write(f"**Total Overperformance:** {energy_overperformance_total:.2f} kWh")

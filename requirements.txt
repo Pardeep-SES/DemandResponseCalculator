@@ -2,3 +2,4 @@ python-docx
 streamlit
 numpy
 matplotlib
+plotly

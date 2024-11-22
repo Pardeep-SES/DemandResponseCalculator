@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 from numpy import trapezoid
+import base64
+
 
 # Function to generate a typical heating load profile
 def typical_heating_load(time_scale):
@@ -29,11 +31,16 @@ def pi_controller(load_profile, time, kp, ki):
 
 # SES Logo and Title
 logo_path = "assets/SES_Logo+Tag_CMYK.png"  # Path set to Git repo's assets folder
+
+# Read and encode the logo file as base64
+with open(logo_path, "rb") as img_file:
+    encoded_logo = base64.b64encode(img_file.read()).decode()
+
+# Display the logo in the Streamlit app
 st.markdown(
     f"""
     <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
-        <img src="data:image/png;base64,{open(logo_path, "rb").read().encode("base64").decode()}" 
-             style="max-width: 80%; height: auto;" />
+        <img src="data:image/png;base64,{encoded_logo}" style="max-width: 80%; height: auto;" />
     </div>
     """,
     unsafe_allow_html=True,

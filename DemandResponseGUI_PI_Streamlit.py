@@ -129,5 +129,49 @@ if load_profile is not None:
         template="plotly_white"
     )
 
+    # Create interactive Plotly chart
+    fig = go.Figure()
+
+    # Add Heat Load line
+    fig.add_trace(go.Scatter(x=time, y=load_profile, mode='lines', name="Heat Load (kW)", line=dict(color='red')))
+
+    # Add Chiller Response line
+    fig.add_trace(go.Scatter(x=time, y=chiller_response, mode='lines', name="Chiller Response (kW)", line=dict(color='blue')))
+
+    # Add Energy Deficit area
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([load_profile, chiller_response[::-1]]),
+        fill='toself',
+        fillcolor='rgba(0, 255, 0, 0.3)',
+        line=dict(color='rgba(255,255,255,0)'),
+        hoverinfo='skip',
+        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
+    ))
+
+    # Add Overperformance area
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([chiller_response, load_profile[::-1]]),
+        fill='toself',
+        fillcolor='rgba(255, 255, 0, 0.3)',
+        line=dict(color='rgba(255,255,255,0)'),
+        hoverinfo='skip',
+        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
+    ))
+
+    # Update layout to enlarge the graph
+    fig.update_layout(
+        title="Chiller Demand Response Simulation",
+        xaxis_title="Time (minutes)",
+        yaxis_title="Power (kW)",
+        legend_title="Legend",
+        hovermode="x unified",
+        template="plotly_white",
+        width=1200,  # Set custom width
+        height=600   # Set custom height
+    )
+
     # Display the chart
     st.plotly_chart(fig)
+

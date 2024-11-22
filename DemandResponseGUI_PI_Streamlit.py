@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-from scipy.integrate import trapezoid
 import base64
 
 # Function to generate a typical heating load profile
@@ -79,8 +78,8 @@ if load_profile is not None:
     energy_deficit = np.maximum(load_profile - chiller_response, 0)
     energy_overperformance = np.maximum(chiller_response - load_profile, 0)
 
-    energy_deficit_total = trapezoid(energy_deficit, time) / 60  # Convert to kWh
-    energy_overperformance_total = trapezoid(energy_overperformance, time) / 60  # Convert to kWh
+    energy_deficit_total = np.trapezoid(energy_deficit, time) / 60  # Convert to kWh
+    energy_overperformance_total = np.trapezoid(energy_overperformance, time) / 60  # Convert to kWh
 
     # Display Results
     st.write(f"**Energy Deficit (Underperformance):** {energy_deficit_total:.2f} kWh")

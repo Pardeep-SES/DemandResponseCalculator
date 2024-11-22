@@ -75,8 +75,11 @@ if load_profile is not None:
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
     # Calculate energy deficit and overperformance
-    energy_deficit = np.maximum(load_profile - chiller_response, 0)
-    energy_overperformance = np.maximum(chiller_response - load_profile, 0)
+    deficit_condition = load_profile > chiller_response
+    overperformance_condition = chiller_response > load_profile
+
+    energy_deficit = np.where(deficit_condition, load_profile - chiller_response, 0)
+    energy_overperformance = np.where(overperformance_condition, chiller_response - load_profile, 0)
 
     energy_deficit_total = trapezoid(energy_deficit, time) / 60  # Convert to kWh
     energy_overperformance_total = trapezoid(energy_overperformance, time) / 60  # Convert to kWh
@@ -112,7 +115,7 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([load_profile, chiller_response[::-1]]),
         fill='toself',
-        fillcolor='rgba(0, 255, 0, 0.5)',  # Consistent Green color
+        fillcolor='rgba(0, 255, 0, 0.5)',  # Green
         line=dict(color='rgba(255,255,255,0)'),  # No border
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
     ))
@@ -122,7 +125,7 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([chiller_response, load_profile[::-1]]),
         fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.5)',  # Consistent Orange color
+        fillcolor='rgba(255, 165, 0, 0.5)',  # Orange
         line=dict(color='rgba(255,255,255,0)'),  # No border
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))

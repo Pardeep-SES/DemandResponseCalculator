@@ -75,75 +75,22 @@ if load_profile is not None:
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
     # Calculate energy deficit and overperformance
-    # Define Load Profile and Chiller Response Lines
-    fig = go.Figure()
+# Add Energy Deficit area (Green)
+fig.add_trace(go.Scatter(
+    x=np.concatenate([time[load_profile > chiller_response], time[load_profile > chiller_response][::-1]]),
+    y=np.concatenate([load_profile[load_profile > chiller_response], chiller_response[load_profile > chiller_response][::-1]]),
+    fill='toself',
+    fillcolor='rgba(34, 139, 34, 0.6)',  # Green color
+    line=dict(color='rgba(255,255,255,0)'),  # No border
+    name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
+))
 
-    # Add Heat Load line
-    fig.add_trace(go.Scatter(
-        x=time,
-        y=load_profile,
-        mode='lines',
-        name="Heat Load (kW)",
-        line=dict(color='red')
-    ))
-
-    # Add Chiller Response line
-    fig.add_trace(go.Scatter(
-        x=time,
-        y=chiller_response,
-        mode='lines',
-        name="Chiller Response (kW)",
-        line=dict(color='blue')
-    ))
-
-    # Calculate Deficit and Overperformance Areas
-    energy_deficit = np.where(load_profile > chiller_response, load_profile - chiller_response, 0)
-    energy_overperformance = np.where(chiller_response > load_profile, chiller_response - load_profile, 0)
-
-    energy_deficit_total = np.trapz(energy_deficit, time) / 60  # Convert to kWh
-    energy_overperformance_total = np.trapz(energy_overperformance, time) / 60  # Convert to kWh
-
-    # Add Energy Deficit area (Green)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time[load_profile > chiller_response], time[load_profile > chiller_response][::-1]]),
-        y=np.concatenate([load_profile[load_profile > chiller_response], chiller_response[load_profile > chiller_response][::-1]]),
-        fill='toself',
-        fillcolor='rgba(34, 139, 34, 0.6)',  # Green color
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
-    ))
-
-    # Add Overperformance area (Orange)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time[chiller_response > load_profile], time[chiller_response > load_profile][::-1]]),
-        y=np.concatenate([chiller_response[chiller_response > load_profile], load_profile[chiller_response > load_profile][::-1]]),
-        fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.6)',  # Orange color
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
-    ))
-
-    # Update layout
-    fig.update_layout(
-        title="Chiller Demand Response Simulation",
-        xaxis_title="Time (minutes)",
-        yaxis_title="Power (kW)",
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.25,
-            xanchor="center",
-            x=0.5
-        ),
-        hovermode="x unified",
-        template="plotly_white",
-        width=1300,
-        height=600
-    )
-
-    # Display the chart
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Display Results
-    st.write(f"**Energy Deficit (Underperformance):** {energy_deficit_total:.2f} kWh")
-    st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
+# Add Overperformance area (Orange)
+fig.add_trace(go.Scatter(
+    x=np.concatenate([time[chiller_response > load_profile], time[chiller_response > load_profile][::-1]]),
+    y=np.concatenate([chiller_response[chiller_response > load_profile], load_profile[chiller_response > load_profile][::-1]]),
+    fill='toself',
+    fillcolor='rgba(255, 165, 0, 0.6)',  # Orange color
+    line=dict(color='rgba(255,255,255,0)'),  # No border
+    name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
+))

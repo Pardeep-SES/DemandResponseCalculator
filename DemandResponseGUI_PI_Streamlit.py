@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-from numpy import trapezoid
+from scipy.integrate import trapezoid
 import base64
 
 # Function to generate a typical heating load profile
@@ -49,7 +49,8 @@ st.title("Chiller Demand Response Simulation with PI Controller")
 st.markdown(
     """
     This simulation models how a chiller responds to varying building cooling demands. Adjust the sliders to 
-    fine-tune proportional and integral gains for efficient energy use.
+    fine-tune proportional and integral gains for efficient energy use. Energy deficit (green) represents 
+    underperformance, and overperformance (orange) shows excess cooling.
     """
 )
 
@@ -75,14 +76,14 @@ if load_profile is not None:
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
     # Calculate energy deficit and overperformance
-    energy_deficit = np.where(load_profile > chiller_response, load_profile - chiller_response, 0)
-    energy_overperformance = np.where(chiller_response > load_profile, chiller_response - load_profile, 0)
+    energy_deficit = np.maximum(load_profile - chiller_response, 0)
+    energy_overperformance = np.maximum(chiller_response - load_profile, 0)
 
     energy_deficit_total = trapezoid(energy_deficit, time) / 60  # Convert to kWh
     energy_overperformance_total = trapezoid(energy_overperformance, time) / 60  # Convert to kWh
 
     # Display Results
-    st.write(f"**Energy Required (Deficit):** {energy_deficit_total:.2f} kWh")
+    st.write(f"**Energy Deficit (Underperformance):** {energy_deficit_total:.2f} kWh")
     st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
     st.write(f"**PI Formula:** Output = {kp:.2f} * Error + {ki:.2f} * ∫Error dt")
 
@@ -110,9 +111,9 @@ if load_profile is not None:
     # Add Energy Deficit area (Green)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([load_profile, np.maximum(load_profile, chiller_response)[::-1]]),
+        y=np.concatenate([load_profile, np.maximum(chiller_response, load_profile)[::-1]]),
         fill='toself',
-        fillcolor='rgba(0, 255, 0, 0.5)',  # Green
+        fillcolor='rgba(34, 139, 34, 0.6)',  # Consistent Green color
         line=dict(color='rgba(255,255,255,0)'),  # No border
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
     ))
@@ -120,9 +121,9 @@ if load_profile is not None:
     # Add Overperformance area (Orange)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([np.maximum(chiller_response, load_profile), chiller_response[::-1]]),
+        y=np.concatenate([chiller_response, np.minimum(load_profile, chiller_response)[::-1]]),
         fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.5)',  # Orange
+        fillcolor='rgba(255, 165, 0, 0.6)',  # Consistent Orange color
         line=dict(color='rgba(255,255,255,0)'),  # No border
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))

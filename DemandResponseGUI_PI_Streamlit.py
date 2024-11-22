@@ -114,7 +114,7 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([load_profile, chiller_response[::-1]]),
         fill='toself',
-        fillcolor='rgba(34, 139, 34, 0.6)',  # Consistent Green color
+        fillcolor='rgba(34, 139, 34, 0.6)',  # Green for deficit
         line=dict(color='rgba(255,255,255,0)'),  # No border
         hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
@@ -125,7 +125,7 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([chiller_response, load_profile[::-1]]),
         fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.6)',  # Consistent Orange color
+        fillcolor='rgba(255, 165, 0, 0.6)',  # Orange for overperformance
         line=dict(color='rgba(255,255,255,0)'),  # No border
         hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"

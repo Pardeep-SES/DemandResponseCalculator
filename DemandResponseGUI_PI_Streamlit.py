@@ -75,11 +75,8 @@ if load_profile is not None:
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
     # Calculate energy deficit and overperformance
-    deficit_condition = load_profile > chiller_response
-    overperformance_condition = chiller_response > load_profile
-
-    energy_deficit = np.where(deficit_condition, load_profile - chiller_response, 0)
-    energy_overperformance = np.where(overperformance_condition, chiller_response - load_profile, 0)
+    energy_deficit = np.where(load_profile > chiller_response, load_profile - chiller_response, 0)
+    energy_overperformance = np.where(chiller_response > load_profile, chiller_response - load_profile, 0)
 
     energy_deficit_total = trapezoid(energy_deficit, time) / 60  # Convert to kWh
     energy_overperformance_total = trapezoid(energy_overperformance, time) / 60  # Convert to kWh
@@ -113,7 +110,7 @@ if load_profile is not None:
     # Add Energy Deficit area (Green)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([load_profile, chiller_response[::-1]]),
+        y=np.concatenate([load_profile, np.maximum(load_profile, chiller_response)[::-1]]),
         fill='toself',
         fillcolor='rgba(0, 255, 0, 0.5)',  # Green
         line=dict(color='rgba(255,255,255,0)'),  # No border
@@ -123,7 +120,7 @@ if load_profile is not None:
     # Add Overperformance area (Orange)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([chiller_response, load_profile[::-1]]),
+        y=np.concatenate([np.maximum(chiller_response, load_profile), chiller_response[::-1]]),
         fill='toself',
         fillcolor='rgba(255, 165, 0, 0.5)',  # Orange
         line=dict(color='rgba(255,255,255,0)'),  # No border

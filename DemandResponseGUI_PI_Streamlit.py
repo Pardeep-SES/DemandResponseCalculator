@@ -92,71 +92,42 @@ if load_profile is not None:
     fig = go.Figure()
 
     # Add Heat Load line
-    fig.add_trace(go.Scatter(x=time, y=load_profile, mode='lines', name="Heat Load (kW)", line=dict(color='red')))
+    fig.add_trace(go.Scatter(
+        x=time, 
+        y=load_profile, 
+        mode='lines', 
+        name="Heat Load (kW)", 
+        line=dict(color='red')
+    ))
 
     # Add Chiller Response line
-    fig.add_trace(go.Scatter(x=time, y=chiller_response, mode='lines', name="Chiller Response (kW)", line=dict(color='blue')))
+    fig.add_trace(go.Scatter(
+        x=time, 
+        y=chiller_response, 
+        mode='lines', 
+        name="Chiller Response (kW)", 
+        line=dict(color='blue')
+    ))
 
-    # Add Energy Deficit area
+    # Add Energy Deficit area (Green)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([load_profile, chiller_response[::-1]]),
         fill='toself',
-        fillcolor='rgba(0, 255, 0, 0.3)',
-        line=dict(color='rgba(255,255,255,0)'),
-        hoverinfo='skip',
+        fillcolor='rgba(34, 139, 34, 0.6)',  # Consistent Green color
+        line=dict(color='rgba(255,255,255,0)'),  # No border
+        hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
     ))
 
-    # Add Overperformance area
+    # Add Overperformance area (Orange)
     fig.add_trace(go.Scatter(
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([chiller_response, load_profile[::-1]]),
         fill='toself',
-        fillcolor='rgba(255, 255, 0, 0.3)',
-        line=dict(color='rgba(255,255,255,0)'),
-        hoverinfo='skip',
-        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
-    ))
-
-    # Update layout
-    fig.update_layout(
-        title="Chiller Demand Response Simulation",
-        xaxis_title="Time (minutes)",
-        yaxis_title="Power (kW)",
-        legend_title="Legend",
-        hovermode="x unified",
-        template="plotly_white"
-    )
-
-    # Create interactive Plotly chart
-    fig = go.Figure()
-
-    # Add Heat Load line
-    fig.add_trace(go.Scatter(x=time, y=load_profile, mode='lines', name="Heat Load (kW)", line=dict(color='red')))
-
-    # Add Chiller Response line
-    fig.add_trace(go.Scatter(x=time, y=chiller_response, mode='lines', name="Chiller Response (kW)", line=dict(color='blue')))
-
-    # Add Energy Deficit area
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([load_profile, chiller_response[::-1]]),
-        fill='toself',
-        fillcolor='rgba(144, 238, 144, 0.6)',  # Green for energy deficit
-        line=dict(color='rgba(255,255,255,0)'),
-        hoverinfo='skip',
-        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
-    ))
-
-    # Add Overperformance area
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([chiller_response, load_profile[::-1]]),
-        fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.6)',  # Orange for overperformance
-        line=dict(color='rgba(255,255,255,0)'),
-        hoverinfo='skip',
+        fillcolor='rgba(255, 165, 0, 0.6)',  # Consistent Orange color
+        line=dict(color='rgba(255,255,255,0)'),  # No border
+        hoverinfo='skip',  # Prevent tooltips on the area
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))
 
@@ -168,15 +139,15 @@ if load_profile is not None:
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.2,
+            y=-0.25,  # Position the legend below the chart
             xanchor="center",
             x=0.5
         ),
-        hovermode="x unified",
+        hovermode="x unified",  # Unified hover tooltip
         template="plotly_white",
-        width=1200,  # Wider chart
-        height=600   # Maintain original height
+        width=1300,  # Wider chart
+        height=600   # Maintain height
     )
 
     # Display the chart
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)

@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 from numpy import trapezoid
 import base64
 
-
 # Function to generate a typical heating load profile
 def typical_heating_load(time_scale):
     time = np.linspace(0, time_scale, 100)
@@ -50,8 +49,7 @@ st.title("Chiller Demand Response Simulation with PI Controller")
 st.markdown(
     """
     This simulation models how a chiller responds to varying building cooling demands. Adjust the sliders to 
-    fine-tune proportional and integral gains for efficient energy use. Hover over the chart to view integrated 
-    energy required and overperformance values.
+    fine-tune proportional and integral gains for efficient energy use.
     """
 )
 
@@ -88,66 +86,64 @@ if load_profile is not None:
     st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
     st.write(f"**PI Formula:** Output = {kp:.2f} * Error + {ki:.2f} * ∫Error dt")
 
-# Create interactive Plotly chart
-fig = go.Figure()
+    # Create interactive Plotly chart
+    fig = go.Figure()
 
-# Add Heat Load line
-fig.add_trace(go.Scatter(
-    x=time,
-    y=load_profile,
-    mode='lines',
-    name="Heat Load (kW)",
-    line=dict(color='red')
-))
+    # Add Heat Load line
+    fig.add_trace(go.Scatter(
+        x=time, 
+        y=load_profile, 
+        mode='lines', 
+        name="Heat Load (kW)", 
+        line=dict(color='red')
+    ))
 
-# Add Chiller Response line
-fig.add_trace(go.Scatter(
-    x=time,
-    y=chiller_response,
-    mode='lines',
-    name="Chiller Response (kW)",
-    line=dict(color='blue')
-))
+    # Add Chiller Response line
+    fig.add_trace(go.Scatter(
+        x=time, 
+        y=chiller_response, 
+        mode='lines', 
+        name="Chiller Response (kW)", 
+        line=dict(color='blue')
+    ))
 
-# Add Energy Deficit area (Green) - Ensure it's plotted first
-fig.add_trace(go.Scatter(
-    x=np.concatenate([time, time[::-1]]),
-    y=np.concatenate([load_profile, np.minimum(chiller_response, load_profile)[::-1]]),
-    fill='toself',
-    fillcolor='rgba(34, 139, 34, 0.6)',  # Deep green color
-    line=dict(color='rgba(255,255,255,0)'),  # No border
-    name="Energy Deficit",
-    hoverinfo="none"  # Disable tooltips for this area
-))
+    # Add Energy Deficit area (Green)
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([load_profile, chiller_response[::-1]]),
+        fill='toself',
+        fillcolor='rgba(0, 255, 0, 0.5)',  # Consistent Green color
+        line=dict(color='rgba(255,255,255,0)'),  # No border
+        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
+    ))
 
-# Add Overperformance area (Mandarin Orange) - Plotted on top
-fig.add_trace(go.Scatter(
-    x=np.concatenate([time, time[::-1]]),
-    y=np.concatenate([chiller_response, np.maximum(load_profile, chiller_response)[::-1]]),
-    fill='toself',
-    fillcolor='rgba(255, 112, 67, 0.6)',  # Mandarin orange color
-    line=dict(color='rgba(255,255,255,0)'),  # No border
-    name="Overperformance",
-    hoverinfo="none"  # Disable tooltips for this area
-))
+    # Add Overperformance area (Orange)
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([chiller_response, load_profile[::-1]]),
+        fill='toself',
+        fillcolor='rgba(255, 165, 0, 0.5)',  # Consistent Orange color
+        line=dict(color='rgba(255,255,255,0)'),  # No border
+        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
+    ))
 
-# Update layout
-fig.update_layout(
-    title="Chiller Demand Response Simulation",
-    xaxis_title="Time (minutes)",
-    yaxis_title="Power (kW)",
-    legend=dict(
-        orientation="h",
-        yanchor="top",
-        y=-0.25,  # Position the legend below the chart
-        xanchor="center",
-        x=0.5
-    ),
-    hovermode="x unified",  # Unified hover tooltip for lines only
-    template="plotly_white",
-    width=1400,  # Make the chart wider
-    height=600   # Maintain height
-)
+    # Update layout
+    fig.update_layout(
+        title="Chiller Demand Response Simulation",
+        xaxis_title="Time (minutes)",
+        yaxis_title="Power (kW)",
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.25,  # Position the legend below the chart
+            xanchor="center",
+            x=0.5
+        ),
+        hovermode="x unified",  # Unified hover tooltip
+        template="plotly_white",
+        width=1300,  # Wider chart
+        height=600   # Maintain height
+    )
 
-# Display the chart
-st.plotly_chart(fig, use_container_width=True)
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True)

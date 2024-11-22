@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-from scipy.integrate import trapezoid
+from numpy import trapezoid
 
 # Function to generate a typical heating load profile
 def typical_heating_load(time_scale):

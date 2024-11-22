@@ -1,15 +1,15 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy import trapezoid
+import plotly.graph_objects as go
+from scipy.integrate import trapezoid
 
-# Function to generate a typical heating load profile with increased max amplitude
+# Function to generate a typical heating load profile
 def typical_heating_load(time_scale):
     time = np.linspace(0, time_scale, 100)
     load_profile = np.piecewise(
         time,
         [time <= 15, (time > 15) & (time <= 40), time > 40],
-        [lambda t: 7 * t,  # Morning ramp-up (increased slope)
+        [lambda t: 7 * t,  # Morning ramp-up
          lambda t: 100 + 20 * np.sin(2 * np.pi * (t - 15) / 20),  # Midday fluctuation
          lambda t: 100 * np.exp(-0.05 * (t - 40))]  # Evening decline
     )
@@ -27,30 +27,34 @@ def pi_controller(load_profile, time, kp, ki):
         response[i] = max(0, response[i])
     return response
 
-# Function to find the first peak of the response
-def find_first_peak(response):
-    peaks = (np.diff(np.sign(np.diff(response))) < 0).nonzero()[0] + 1
-    return peaks[0] if len(peaks) > 0 else len(response) - 1
+# SES Logo and Title
+logo_path = "assets/SES_Logo+Tag_CMYK.png"  # Path set to Git repo's assets folder
+st.markdown(
+    f"""
+    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+        <img src="data:image/png;base64,{open(logo_path, "rb").read().encode("base64").decode()}" 
+             style="max-width: 80%; height: auto;" />
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-# Streamlit app
 st.title("Chiller Demand Response Simulation with PI Controller")
 st.markdown(
     """
-    **What is Demand Response?**
-    This simulation models how a chiller responds to varying building cooling demands. 
-    Use the sliders to adjust proportional and integral gains, and minimize energy waste.
+    This simulation models how a chiller responds to varying building cooling demands. Adjust the sliders to 
+    fine-tune proportional and integral gains for efficient energy use. Hover over the chart to view integrated 
+    energy required and overperformance values.
     """
 )
 
-# User inputs
+# User Inputs
 time_scale = st.slider("Timebase (minutes)", 1, 120, 30)
-# Gain sliders
 kp = st.slider("Proportional Gain (Kp)", 0.0, 2.0, 1.0, step=0.01)
 ki = st.slider("Integral Gain (Ki)", 0.0, 2.0, 0.5, step=0.01)
-
 custom_load = st.text_input("Custom Load Profile (comma-separated kW values)")
 
-# Load profile
+# Load Profile
 if custom_load.strip():
     try:
         load_profile = np.array([float(x) for x in custom_load.split(",")])
@@ -65,32 +69,58 @@ if load_profile is not None:
     # PI Controller
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
-    # Calculate energy deficit
+    # Calculate energy deficit and overperformance
     energy_deficit = np.maximum(load_profile - chiller_response, 0)
-    supplemental_energy = trapezoid(energy_deficit, time) / 60
+    energy_overperformance = np.maximum(chiller_response - load_profile, 0)
 
-    # Find first peak of the response
-    first_peak_idx = find_first_peak(chiller_response)
-    instantaneous_power = chiller_response[first_peak_idx]
+    energy_deficit_total = trapezoid(energy_deficit, time) / 60  # Convert to kWh
+    energy_overperformance_total = trapezoid(energy_overperformance, time) / 60  # Convert to kWh
 
-    # Display results
-    st.write(f"**Energy Wasted (Deficit):** {supplemental_energy:.2f} kWh")
-    st.write(f"**Power at First Peak:** {instantaneous_power:.2f} kW")
+    # Display Results
+    st.write(f"**Energy Required (Deficit):** {energy_deficit_total:.2f} kWh")
+    st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
     st.write(f"**PI Formula:** Output = {kp:.2f} * Error + {ki:.2f} * ∫Error dt")
 
-    # Plot the graph
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.plot(time, load_profile, label="Heat Load (kW)", color="red")
-    ax.plot(time, chiller_response, label="Chiller Response (kW)", color="blue")
-    ax.fill_between(time, load_profile, chiller_response, where=(load_profile > chiller_response),
-                    color="green", alpha=0.3, label="Energy Deficit")
-    ax.fill_between(time, chiller_response, load_profile, where=(chiller_response > load_profile),
-                    color="yellow", alpha=0.3, label="Overperformance (Optimization Opportunity)")
-    ax.set_title("Chiller Demand Response Simulation")
-    ax.set_xlabel("Time (minutes)")
-    ax.set_ylabel("Power (kW)")
-    ax.legend()
-    ax.grid(True)
+    # Create interactive Plotly chart
+    fig = go.Figure()
 
-    # Display plot
-    st.pyplot(fig)
+    # Add Heat Load line
+    fig.add_trace(go.Scatter(x=time, y=load_profile, mode='lines', name="Heat Load (kW)", line=dict(color='red')))
+
+    # Add Chiller Response line
+    fig.add_trace(go.Scatter(x=time, y=chiller_response, mode='lines', name="Chiller Response (kW)", line=dict(color='blue')))
+
+    # Add Energy Deficit area
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([load_profile, chiller_response[::-1]]),
+        fill='toself',
+        fillcolor='rgba(0, 255, 0, 0.3)',
+        line=dict(color='rgba(255,255,255,0)'),
+        hoverinfo='skip',
+        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
+    ))
+
+    # Add Overperformance area
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([time, time[::-1]]),
+        y=np.concatenate([chiller_response, load_profile[::-1]]),
+        fill='toself',
+        fillcolor='rgba(255, 255, 0, 0.3)',
+        line=dict(color='rgba(255,255,255,0)'),
+        hoverinfo='skip',
+        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
+    ))
+
+    # Update layout
+    fig.update_layout(
+        title="Chiller Demand Response Simulation",
+        xaxis_title="Time (minutes)",
+        yaxis_title="Power (kW)",
+        legend_title="Legend",
+        hovermode="x unified",
+        template="plotly_white"
+    )
+
+    # Display the chart
+    st.plotly_chart(fig)

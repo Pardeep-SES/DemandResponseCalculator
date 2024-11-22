@@ -74,7 +74,6 @@ if load_profile is not None:
     # PI Controller
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
-    # Calculate energy deficit and overperformance
     # Initialize the figure
     fig = go.Figure()
 
@@ -123,3 +122,28 @@ if load_profile is not None:
         line=dict(color='rgba(255,255,255,0)'),  # No border
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))
+
+    # Update layout
+    fig.update_layout(
+        title="Chiller Demand Response Simulation",
+        xaxis_title="Time (minutes)",
+        yaxis_title="Power (kW)",
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.25,
+            xanchor="center",
+            x=0.5
+        ),
+        hovermode="x unified",
+        template="plotly_white",
+        width=1300,
+        height=600
+    )
+
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Display Results
+    st.write(f"**Energy Deficit (Underperformance):** {energy_deficit_total:.2f} kWh")
+    st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")

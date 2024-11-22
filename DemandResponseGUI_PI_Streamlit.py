@@ -88,64 +88,64 @@ if load_profile is not None:
     st.write(f"**Energy Overperformance:** {energy_overperformance_total:.2f} kWh")
     st.write(f"**PI Formula:** Output = {kp:.2f} * Error + {ki:.2f} * ∫Error dt")
 
-    # Create interactive Plotly chart
-    fig = go.Figure()
+# Create interactive Plotly chart
+fig = go.Figure()
 
-    # Add Heat Load line
-    fig.add_trace(go.Scatter(
-        x=time, 
-        y=load_profile, 
-        mode='lines', 
-        name="Heat Load (kW)", 
-        line=dict(color='red')
-    ))
+# Add Heat Load line
+fig.add_trace(go.Scatter(
+    x=time, 
+    y=load_profile, 
+    mode='lines', 
+    name="Heat Load (kW)", 
+    line=dict(color='red')
+))
 
-    # Add Chiller Response line
-    fig.add_trace(go.Scatter(
-        x=time, 
-        y=chiller_response, 
-        mode='lines', 
-        name="Chiller Response (kW)", 
-        line=dict(color='blue')
-    ))
+# Add Chiller Response line
+fig.add_trace(go.Scatter(
+    x=time, 
+    y=chiller_response, 
+    mode='lines', 
+    name="Chiller Response (kW)", 
+    line=dict(color='blue')
+))
 
-    # Add Energy Deficit area (Green)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([load_profile, np.maximum(chiller_response, 0)[::-1]]),  # Correct overlap
-        fill='toself',
-        fillcolor='rgba(34, 139, 34, 0.7)',  # Slightly more opaque green
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
-    ))
+# Add Energy Deficit area (Green)
+fig.add_trace(go.Scatter(
+    x=np.concatenate([time, time[::-1]]),
+    y=np.concatenate([load_profile, np.maximum(chiller_response, 0)[::-1]]),  # Correct overlap
+    fill='toself',
+    fillcolor='rgba(34, 139, 34, 0.7)',  # Slightly more opaque green
+    line=dict(color='rgba(255,255,255,0)'),  # No border
+    name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
+))
 
-    # Add Overperformance area (Orange)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([time, time[::-1]]),
-        y=np.concatenate([np.minimum(chiller_response, load_profile), load_profile[::-1]]),  # Correct overlap
-        fill='toself',
-        fillcolor='rgba(255, 165, 0, 0.7)',  # Slightly more opaque orange
-        line=dict(color='rgba(255,255,255,0)'),  # No border
-        name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
-    ))
+# Add Overperformance area (Orange)
+fig.add_trace(go.Scatter(
+    x=np.concatenate([time, time[::-1]]),
+    y=np.concatenate([np.minimum(chiller_response, load_profile), load_profile[::-1]]),  # Correct overlap
+    fill='toself',
+    fillcolor='rgba(255, 165, 0, 0.7)',  # Slightly more opaque orange
+    line=dict(color='rgba(255,255,255,0)'),  # No border
+    name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
+))
 
-    # Update layout
-    fig.update_layout(
-        title="Chiller Demand Response Simulation",
-        xaxis_title="Time (minutes)",
-        yaxis_title="Power (kW)",
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.25,  # Position the legend below the chart
-            xanchor="center",
-            x=0.5
-        ),
-        hovermode="x unified",  # Unified hover tooltip
-        template="plotly_white",
-        width=1400,  # Make the chart wider
-        height=600   # Maintain height
-    )
+# Update layout
+fig.update_layout(
+    title="Chiller Demand Response Simulation",
+    xaxis_title="Time (minutes)",
+    yaxis_title="Power (kW)",
+    legend=dict(
+        orientation="h",
+        yanchor="top",
+        y=-0.25,  # Position the legend below the chart
+        xanchor="center",
+        x=0.5
+    ),
+    hovermode="x unified",  # Unified hover tooltip
+    template="plotly_white",
+    width=1400,  # Make the chart wider
+    height=600   # Maintain height
+)
 
-    # Display the chart
-    st.plotly_chart(fig, use_container_width=True)
+# Display the chart
+st.plotly_chart(fig, use_container_width=True)

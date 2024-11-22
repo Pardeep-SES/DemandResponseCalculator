@@ -75,9 +75,11 @@ if load_profile is not None:
     chiller_response = pi_controller(load_profile, time, kp, ki)
 
     # Calculate energy deficit and overperformance
+    # Calculate energy deficit and overperformance
     energy_deficit = np.where(load_profile > chiller_response, load_profile - chiller_response, 0)
     energy_overperformance = np.where(chiller_response > load_profile, chiller_response - load_profile, 0)
 
+    # Calculate total integrated energy values
     energy_deficit_total = np.trapz(energy_deficit, time) / 60  # Convert to kWh
     energy_overperformance_total = np.trapz(energy_overperformance, time) / 60  # Convert to kWh
 
@@ -135,7 +137,7 @@ if load_profile is not None:
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.25,  # Position the legend below the chart
+            y=-0.25,
             xanchor="center",
             x=0.5
         ),

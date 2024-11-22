@@ -143,7 +143,7 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([load_profile, chiller_response[::-1]]),
         fill='toself',
-        fillcolor='rgba(0, 255, 0, 0.3)',
+        fillcolor='rgba(144, 238, 144, 0.6)',  # Light green for energy deficit
         line=dict(color='rgba(255,255,255,0)'),
         hoverinfo='skip',
         name=f"Energy Deficit: {energy_deficit_total:.2f} kWh"
@@ -154,24 +154,29 @@ if load_profile is not None:
         x=np.concatenate([time, time[::-1]]),
         y=np.concatenate([chiller_response, load_profile[::-1]]),
         fill='toself',
-        fillcolor='rgba(255, 255, 0, 0.3)',
+        fillcolor='rgba(255, 255, 0, 0.6)',  # Yellow for overperformance
         line=dict(color='rgba(255,255,255,0)'),
         hoverinfo='skip',
         name=f"Overperformance: {energy_overperformance_total:.2f} kWh"
     ))
 
-    # Update layout to enlarge the graph
+    # Update layout for larger chart and move legend below
     fig.update_layout(
         title="Chiller Demand Response Simulation",
         xaxis_title="Time (minutes)",
         yaxis_title="Power (kW)",
-        legend_title="Legend",
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="top",
+            y=-0.2,           # Position below chart
+            xanchor="center",
+            x=0.5
+        ),
         hovermode="x unified",
         template="plotly_white",
-        width=1200,  # Set custom width
-        height=600   # Set custom height
+        width=1800,  # Larger width
+        height=900   # Larger height
     )
 
     # Display the chart
     st.plotly_chart(fig)
-
